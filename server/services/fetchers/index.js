@@ -11,7 +11,7 @@ import { searchWeibo } from './weibo.js'
 export const fetchers = [
   { name: 'hackernews', fetchFn: () => fetchTopStories(30), tier: 1 },
   { name: 'github', fetchFn: () => fetchTrending(), tier: 1 },
-  { name: 'twitter', fetchFn: searchTwitter, tier: 2, enabled: !!process.env.TWITTER_API_KEY },
+  { name: 'twitter', fetchFn: searchTwitter, tier: 2, enabled: Boolean(process.env.TWITTER_API_KEY || process.env.TWITTERAPI_IO_KEY) },
   { name: 'bing', fetchFn: searchBing, tier: 2 },
   { name: 'duckduckgo', fetchFn: searchDuckDuckGo, tier: 2 },
   { name: 'sogou', fetchFn: searchSogou, tier: 2 },
