@@ -14,7 +14,9 @@ router.get('/', async (req, res) => {
   const topics = await prisma.hotTopic.findMany({
     where,
     include: { keyword: true },
-    orderBy: sort === 'score' ? { aiScore: 'desc' } : { fetchedAt: 'desc' },
+    orderBy: sort === 'score'
+      ? [{ aiScore: 'desc' }, { fetchedAt: 'desc' }]
+      : { fetchedAt: 'desc' },
     take: Number(limit) || 50,
   })
 

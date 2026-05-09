@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import { createServer } from 'node:http'
@@ -30,8 +31,12 @@ app.get('/api/health', (req, res) => {
 })
 
 app.post('/api/fetch-trigger', async (req, res) => {
-  fetchAndAnalyze()
-  res.json({ message: 'Fetch triggered' })
+  try {
+    await fetchAndAnalyze()
+    res.json({ message: 'Fetch completed' })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
 })
 
 async function start() {
