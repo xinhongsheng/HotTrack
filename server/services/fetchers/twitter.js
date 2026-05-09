@@ -15,7 +15,7 @@ export function buildTwitterSearchQuery(keywords = []) {
   if (terms.length === 0) return ''
 
   const sinceTime = Math.floor((Date.now() - 24 * 60 * 60 * 1000) / 1000)
-  return `(${terms.join(' OR ')}) since_time:${sinceTime}`
+  return `(${terms.join(' OR ')}) since_time:${sinceTime} min_faves:5 -is:reply`
 }
 
 export function normalizeTweet(tweet) {
@@ -68,8 +68,9 @@ export async function searchTwitter(keywords = []) {
     const tweets = data.tweets || data.statuses || data.data || []
 
     return tweets
-      .map(normalizeTweet)
-      .filter((item) => item.title && item.url)
+      .map((tweet) => ({ ...normalizeTweet(tweet), isReply: Boolean(tweet.in_reply_to_status_id || tweet.in_reply_to_id || tweet.isReply) }))
+      .filter((item) => item.title && item.url && !item.isReply && item.score >= 5)
+      .map(({ isReply, ...item }) => item)
   } catch (err) {
     console.error('[twitter] fetch error:', err.message)
     return []

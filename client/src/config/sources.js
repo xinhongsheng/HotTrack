@@ -1,4 +1,4 @@
-import { Code2, MessageCircle, Search, Video } from 'lucide-react'
+import { Code2, MessageCircle, Search, Video, Users } from 'lucide-react'
 
 export const SOURCE_META = {
   hackernews: {
@@ -72,6 +72,14 @@ export const SOURCE_META = {
     color: '#f43f5e',
     bg: 'rgba(244,63,94,0.10)',
     border: 'rgba(244,63,94,0.28)',
+  },
+  reddit: {
+    label: 'Reddit',
+    shortLabel: 'RD',
+    icon: Users,
+    color: '#ff4500',
+    bg: 'rgba(255,69,0,0.10)',
+    border: 'rgba(255,69,0,0.28)',
   },
 }
 

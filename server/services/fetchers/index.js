@@ -7,6 +7,7 @@ import { searchDuckDuckGo } from './duckduckgo.js'
 import { searchSogou } from './sogou.js'
 import { searchBilibili } from './bilibili.js'
 import { searchWeibo } from './weibo.js'
+import { searchReddit } from './reddit.js'
 
 export const fetchers = [
   { name: 'hackernews', fetchFn: () => fetchTopStories(30), tier: 1 },
@@ -16,6 +17,7 @@ export const fetchers = [
   { name: 'duckduckgo', fetchFn: searchDuckDuckGo, tier: 2 },
   { name: 'sogou', fetchFn: searchSogou, tier: 2 },
   { name: 'bilibili', fetchFn: searchBilibili, tier: 2 },
+  { name: 'reddit', fetchFn: searchReddit, tier: 2 },
   { name: 'google', fetchFn: searchGoogle, tier: 3 },
   { name: 'weibo', fetchFn: searchWeibo, tier: 3 },
 ]
@@ -34,4 +36,5 @@ export const SOURCE_META = {
   sogou: { label: '搜狗', shortLabel: 'SG', color: '#ff6e00' },
   bilibili: { label: 'B站', shortLabel: 'B', color: '#00a1d6' },
   weibo: { label: '微博', shortLabel: 'WB', color: '#e6162d' },
+  reddit: { label: 'Reddit', shortLabel: 'RD', color: '#ff4500' },
 }
