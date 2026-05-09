@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Flame, Inbox, RefreshCw, SlidersHorizontal } from 'lucide-react'
+import { Flame, Inbox, RefreshCw, Search, SlidersHorizontal } from 'lucide-react'
 import { api } from '../api'
 import HotTopicCard from '../components/HotTopicCard'
 import { SOURCE_META } from '../config/sources'
@@ -78,15 +78,16 @@ export default function HotTopics() {
 
   return (
     <div className="space-y-7">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="panel-elevated rounded-xl p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-orange-300/20 bg-orange-300/10 px-3 py-1 text-xs font-bold text-orange-200">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-xs font-bold text-amber-100">
             <Flame size={13} />
             热点信号库
           </div>
           <h1 className="text-2xl font-bold md:text-3xl" style={{ color: 'var(--text-primary)' }}>热点库</h1>
           <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-            {loading ? '正在同步热点数据' : `当前筛选命中 ${topics.length} 条热点`}
+            {loading ? '正在同步热点数据' : `当前筛选命中 ${topics.length} 条热点，优先处理最值得分享的信号。`}
           </p>
         </div>
 
@@ -99,12 +100,16 @@ export default function HotTopics() {
           <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />
           {refreshing ? '刷新中' : '刷新热点'}
         </button>
+        </div>
       </div>
 
       <section className="panel rounded-xl p-4">
-        <div className="mb-3 flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
-          <SlidersHorizontal size={15} />
-          <span className="section-title">筛选条件</span>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
+            <SlidersHorizontal size={15} />
+            <span className="section-title">筛选条件</span>
+          </div>
+          <Search size={15} style={{ color: 'var(--accent-green)' }} />
         </div>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <select

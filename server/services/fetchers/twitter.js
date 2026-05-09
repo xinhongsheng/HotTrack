@@ -1,7 +1,6 @@
 import fetch from 'node-fetch'
 import { createRateLimiter, fetchWithRetry } from './utils.js'
 
-const API_KEY = process.env.TWITTER_API_KEY || process.env.TWITTERAPI_IO_KEY
 const BASE_URL = process.env.TWITTER_API_BASE_URL || 'https://api.twitterapi.io'
 const limiter = createRateLimiter({ tokensPerInterval: 15, interval: 'minute' })
 
@@ -38,6 +37,7 @@ export function normalizeTweet(tweet) {
 }
 
 export async function searchTwitter(keywords = []) {
+  const API_KEY = process.env.TWITTER_API_KEY || process.env.TWITTERAPI_IO_KEY
   if (!API_KEY) {
     console.warn('[twitter] TWITTER_API_KEY is not configured, skipping')
     return []

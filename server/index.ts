@@ -1,4 +1,6 @@
-import 'dotenv/config'
+import { config } from 'dotenv'
+import { resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import express from 'express'
 import cors from 'cors'
 import { createServer } from 'node:http'
@@ -10,6 +12,8 @@ import sourcesRouter from './routes/sources.js'
 import emailRouter from './routes/email.js'
 import { initRealtime } from './realtime.ts'
 import { startScheduler, fetchAndAnalyze } from './services/scheduler.js'
+
+config({ path: resolve(dirname(fileURLToPath(import.meta.url)), '../.env') })
 
 const app = express()
 const httpServer = createServer(app)

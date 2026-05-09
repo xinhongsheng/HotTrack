@@ -14,6 +14,14 @@ function formatTime(value) {
   })
 }
 
+function sourceMeta(source) {
+  return SOURCE_META[source] || {
+    label: source || '未知来源',
+    color: '#94a3b8',
+    bg: 'rgba(148,163,184,0.10)',
+  }
+}
+
 export default function NotificationBell() {
   const [open, setOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
@@ -26,7 +34,7 @@ export default function NotificationBell() {
         api.getNotifications(),
         api.getUnreadCount(),
       ])
-      setNotifications(items)
+      setNotifications(Array.isArray(items) ? items : [])
       setUnreadCount(count.unread || 0)
     } catch (err) {
       console.error('Notification load error:', err)
@@ -37,7 +45,7 @@ export default function NotificationBell() {
     loadNotifications()
 
     const refreshNotifications = () => loadNotifications()
-    const updateCount = (payload) => setUnreadCount(payload.unread || 0)
+    const updateCount = (payload = {}) => setUnreadCount(payload.unread || 0)
 
     socket.on('notification:created', refreshNotifications)
     socket.on('notification:count', updateCount)
@@ -86,11 +94,13 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-13 z-[80] w-[min(360px,calc(100vw-24px))] rounded-2xl border border-white/10 bg-[#15141d]/95 p-3 shadow-2xl backdrop-blur-xl">
+        <div className="panel-elevated animate-slide-in absolute right-0 top-[52px] z-[80] w-[min(380px,calc(100vw-24px))] rounded-xl p-3">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-bold text-slate-100">通知中心</p>
-              <p className="text-xs text-slate-500">{unreadCount > 0 ? `${unreadCount} 条未读消息` : '暂无未读消息'}</p>
+              <p className="text-xs text-slate-500">
+                {unreadCount > 0 ? `${unreadCount} 条未读消息` : '暂无未读消息'}
+              </p>
             </div>
             {unreadCount > 0 && (
               <button
@@ -107,7 +117,7 @@ export default function NotificationBell() {
           <div className="max-h-[380px] space-y-2 overflow-y-auto pr-1">
             {notifications.length > 0 ? (
               notifications.map((item) => {
-                const meta = SOURCE_META[item.source] || SOURCE_META.hackernews
+                const meta = sourceMeta(item.source)
                 return (
                   <div
                     key={item.id}

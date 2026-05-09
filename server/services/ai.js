@@ -1,10 +1,10 @@
 import fetch from 'node-fetch'
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || ''
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
 const MODEL = 'deepseek/deepseek-chat'
 
 export async function analyzeTopic(topic) {
+  const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || ''
   if (!OPENROUTER_API_KEY) {
     return {
       score: estimateScore(topic),
