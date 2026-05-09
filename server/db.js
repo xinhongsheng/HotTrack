@@ -59,6 +59,13 @@ export async function initDB() {
     )
   `)
 
+  db.run(`
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    )
+  `)
+
   try {
     db.run('CREATE INDEX IF NOT EXISTS idx_hot_topics_source ON hot_topics(source)')
     db.run('CREATE INDEX IF NOT EXISTS idx_hot_topics_keyword ON hot_topics(keyword_id)')

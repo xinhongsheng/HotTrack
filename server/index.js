@@ -4,6 +4,8 @@ import { initDB } from './db.js'
 import keywordsRouter from './routes/keywords.js'
 import hotTopicsRouter from './routes/hotTopics.js'
 import notificationsRouter from './routes/notifications.js'
+import sourcesRouter from './routes/sources.js'
+import emailRouter from './routes/email.js'
 import { startScheduler, fetchAndAnalyze } from './services/scheduler.js'
 
 const app = express()
@@ -15,6 +17,8 @@ app.use(express.json())
 app.use('/api/keywords', keywordsRouter)
 app.use('/api/hot-topics', hotTopicsRouter)
 app.use('/api/notifications', notificationsRouter)
+app.use('/api/sources', sourcesRouter)
+app.use('/api', emailRouter)
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })

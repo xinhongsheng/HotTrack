@@ -1,13 +1,9 @@
 import { ExternalLink, Sparkles } from 'lucide-react'
 import ScoreBadge from './ScoreBadge'
-
-const sourceConfig = {
-  hackernews: { bg: 'var(--accent-orange-dim)', border: 'rgba(245,158,11,0.25)', bar: 'var(--accent-orange)', label: 'HN', color: 'var(--accent-orange)' },
-  github: { bg: 'var(--accent-purple-dim)', border: 'rgba(168,85,247,0.25)', bar: 'var(--accent-purple)', label: 'GH', color: 'var(--accent-purple)' },
-}
+import { SOURCE_META } from '../config/sources'
 
 export default function HotTopicCard({ topic }) {
-  const src = sourceConfig[topic.source] || sourceConfig.hackernews
+  const src = SOURCE_META[topic.source] || SOURCE_META.hackernews
   const isNew = new Date(topic.fetched_at) > new Date(Date.now() - 3600000)
 
   return (
@@ -16,7 +12,7 @@ export default function HotTopicCard({ topic }) {
       style={{ background: src.bg, border: `1px solid ${src.border}` }}
     >
       {/* Source bar */}
-      <div className="absolute left-0 top-0 bottom-0 w-1" style={{ background: src.bar }} />
+      <div className="absolute left-0 top-0 bottom-0 w-1" style={{ background: src.color }} />
 
       <div className="p-4 pl-5">
         {/* Header */}
@@ -27,7 +23,7 @@ export default function HotTopicCard({ topic }) {
                 className="badge"
                 style={{ background: src.bg, border: `1px solid ${src.border}`, color: src.color }}
               >
-                {src.label}
+                {src.shortLabel}
               </span>
               {isNew && (
                 <span

@@ -35,4 +35,9 @@ export const api = {
 
   // Trigger fetch
   triggerFetch: () => request('/fetch-trigger', { method: 'POST' }),
+
+  // Email settings
+  getEmailSettings: () => request('/email-settings'),
+  updateEmailSettings: (data) => request('/email-settings', { method: 'PUT', body: JSON.stringify(data) }),
+  sendTestEmail: () => request('/email-test', { method: 'POST' }),
 }

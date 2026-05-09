@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Flame, RefreshCw, SlidersHorizontal, Inbox } from 'lucide-react'
 import { api } from '../api'
 import HotTopicCard from '../components/HotTopicCard'
+import { SOURCE_META } from '../config/sources'
 
 function SkeletonTopicCard() {
   return (
@@ -100,8 +101,9 @@ export default function HotTopics() {
           aria-label="数据来源筛选"
         >
           <option value="">全部来源</option>
-          <option value="hackernews">Hacker News</option>
-          <option value="github">GitHub</option>
+          {Object.entries(SOURCE_META).map(([id, meta]) => (
+            <option key={id} value={id}>{meta.label}</option>
+          ))}
         </select>
 
         <select

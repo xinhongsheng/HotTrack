@@ -3,14 +3,17 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import { BarChart3, TrendingUp, Tags, Zap, RefreshCw, Flame, Radar } from 'lucide-react'
 import { api } from '../api'
 import HotTopicCard from '../components/HotTopicCard'
+import { SOURCE_META, CHART_COLORS } from '../config/sources'
 
-const CHART_COLORS = ['#f59e0b', '#a855f7', '#3b82f6', '#22c55e']
+const SOURCE_NAMES = Object.fromEntries(
+  Object.entries(SOURCE_META).map(([k, v]) => [k, v.label])
+)
 
 const statCards = [
-  { key: 'total', label: '热点总数', icon: Flame, color: 'var(--accent-blue)', getColor: () => 'var(--accent-blue)' },
-  { key: 'today', label: '今日新增', icon: Zap, color: 'var(--accent-green)', getColor: () => 'var(--accent-green)' },
-  { key: 'activeKeywords', label: '活跃关键词', icon: Tags, color: 'var(--accent-orange)', getColor: () => 'var(--accent-orange)' },
-  { key: 'avgScore', label: '平均热度', icon: TrendingUp, color: 'var(--accent-purple)', getColor: () => 'var(--accent-purple)' },
+  { key: 'total', label: '热点总数', icon: Flame, color: 'var(--accent-blue)' },
+  { key: 'today', label: '今日新增', icon: Zap, color: 'var(--accent-green)' },
+  { key: 'activeKeywords', label: '活跃关键词', icon: Tags, color: 'var(--accent-orange)' },
+  { key: 'avgScore', label: '平均热度', icon: TrendingUp, color: 'var(--accent-purple)' },
 ]
 
 function SkeletonCard() {
@@ -95,7 +98,7 @@ export default function Dashboard() {
   }
 
   const sourceData = stats?.bySource?.map((s) => ({
-    name: s.source === 'hackernews' ? 'Hacker News' : 'GitHub',
+    name: SOURCE_NAMES[s.source] || s.source,
     value: s.count,
   })) || []
 
