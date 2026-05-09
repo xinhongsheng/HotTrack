@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Lightbulb, Plus, Search, Tags, Trash2 } from 'lucide-react'
 import { api } from '../api'
+import CardSpotlight from '../components/ui/CardSpotlight'
 
 const categories = [
   { value: 'general', label: '通用' },
@@ -80,14 +81,14 @@ export default function Keywords() {
 
   return (
     <div className="space-y-7">
-      <div>
-        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-sky-300/20 bg-sky-300/10 px-3 py-1 text-xs font-bold text-sky-200">
+      <div className="panel-elevated rounded-xl p-5">
+        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-teal-300/20 bg-teal-300/10 px-3 py-1 text-xs font-bold text-teal-100">
           <Tags size={13} />
-          监控词库
+          选题雷达词库
         </div>
         <h1 className="text-2xl font-bold md:text-3xl" style={{ color: 'var(--text-primary)' }}>关键词管理</h1>
         <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          配置需要持续扫描的主题、产品名或技术词，系统会按任务周期自动发现相关热点。
+          配置你想持续盯住的模型、框架、产品和技术方向，让热点在变成爆款前先进入你的视野。
         </p>
       </div>
 
@@ -121,7 +122,7 @@ export default function Keywords() {
           </select>
           <button type="submit" className="btn-primary px-5 py-2.5 text-sm">
             <Plus size={15} />
-            添加
+            加入雷达
           </button>
         </div>
 
@@ -156,7 +157,7 @@ export default function Keywords() {
           </div>
         ) : (
           keywords.map((keyword) => (
-            <div key={keyword.id} className="panel card-interactive rounded-xl p-4">
+            <CardSpotlight key={keyword.id} className="panel card-interactive rounded-xl p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex min-w-0 items-center gap-4">
                   <button
@@ -199,7 +200,7 @@ export default function Keywords() {
                   删除
                 </button>
               </div>
-            </div>
+            </CardSpotlight>
           ))
         )}
       </section>
@@ -207,7 +208,7 @@ export default function Keywords() {
       <section className="panel rounded-xl p-5">
         <div className="mb-4 flex items-center gap-2">
           <Lightbulb size={16} style={{ color: 'var(--accent-orange)' }} />
-          <h2 className="panel-title">热门关键词推荐</h2>
+          <h2 className="panel-title">博主常用监控词</h2>
         </div>
         <div className="flex flex-wrap gap-2">
           {suggestedKeywords.map((keyword) => (
