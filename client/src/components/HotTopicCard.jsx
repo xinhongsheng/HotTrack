@@ -1,4 +1,4 @@
-import { ExternalLink, Sparkles } from 'lucide-react'
+import { ExternalLink, Search, Sparkles } from 'lucide-react'
 import ScoreBadge from './ScoreBadge'
 import { SOURCE_META } from '../config/sources'
 
@@ -20,6 +20,18 @@ function formatTime(value) {
   })
 }
 
+function SourceTag({ source }) {
+  const meta = SOURCE_META[source] || SOURCE_META.hackernews
+  const Icon = meta.icon || Search
+
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs font-bold" style={{ color: 'var(--text-muted)' }}>
+      <Icon size={14} style={{ color: meta.color }} />
+      {meta.label}
+    </span>
+  )
+}
+
 export default function HotTopicCard({ topic }) {
   const src = SOURCE_META[topic.source] || SOURCE_META.hackernews
   const fetchedAt = topic.fetched_at ? new Date(topic.fetched_at) : null
@@ -34,37 +46,30 @@ export default function HotTopicCard({ topic }) {
       <div className="absolute left-0 top-0 h-full w-1" style={{ background: src.color }} />
 
       <div className="p-4 pl-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <span className="badge" style={{ background: src.bg, border: `1px solid ${src.border}`, color: src.color }}>
-                {src.shortLabel}
-              </span>
-              {topic.keyword && (
-                <span className="badge" style={{ background: 'var(--accent-blue-dim)', color: 'var(--accent-blue)' }}>
-                  {topic.keyword}
-                </span>
-              )}
-              {isNew && (
-                <span className="badge border border-emerald-300/25 bg-emerald-300/10 text-emerald-200">
-                  新信号
-                </span>
-              )}
-            </div>
-
-            <a
-              href={topic.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="line-clamp-2 text-[15px] font-bold leading-snug transition-colors hover:text-emerald-200"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              {topic.title || '未命名热点'}
-            </a>
-          </div>
-
-          <ScoreBadge score={topic.ai_score} />
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <ScoreBadge score={topic.ai_score} showScore={false} />
+          <SourceTag source={topic.source} />
+          {topic.keyword && (
+            <span className="badge rounded-md" style={{ background: 'var(--accent-purple-dim)', color: 'var(--accent-purple)' }}>
+              {topic.keyword}
+            </span>
+          )}
+          {isNew && (
+            <span className="badge border border-emerald-300/25 bg-emerald-300/10 text-emerald-200">
+              新信号
+            </span>
+          )}
         </div>
+
+        <a
+          href={topic.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="line-clamp-2 text-[15px] font-bold leading-snug transition-colors hover:text-emerald-200"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          {topic.title || '未命名热点'}
+        </a>
 
         {topic.summary && (
           <p className="mt-3 line-clamp-2 text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
