@@ -1,5 +1,14 @@
 const BASE = '/api'
 
+export function buildQueryString(params = {}) {
+  const cleanParams = Object.entries(params).filter(([, value]) => (
+    value !== undefined &&
+    value !== null &&
+    value !== ''
+  ))
+  return new URLSearchParams(cleanParams).toString()
+}
+
 async function request(url, options = {}) {
   const res = await fetch(`${BASE}${url}`, {
     headers: { 'Content-Type': 'application/json' },
@@ -21,8 +30,8 @@ export const api = {
 
   // Hot Topics
   getHotTopics: (params = {}) => {
-    const qs = new URLSearchParams(params).toString()
-    return request(`/hot-topics?${qs}`)
+    const qs = buildQueryString(params)
+    return request(qs ? `/hot-topics?${qs}` : '/hot-topics')
   },
   getHotTopic: (id) => request(`/hot-topics/${id}`),
   getStats: () => request('/hot-topics/stats'),
