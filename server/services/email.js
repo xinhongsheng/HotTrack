@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer'
-import { queryAll, runSQL } from '../db.js'
+import { prisma } from '../db.ts'
 
 const EMAIL_KEYS = [
   'email_enabled',
@@ -10,12 +10,13 @@ const EMAIL_KEYS = [
   'email_recipient',
 ]
 
-export function getEmailSettings() {
-  const rows = queryAll(
-    `SELECT key, value FROM settings WHERE key IN (${EMAIL_KEYS.map(() => '?').join(',')})`,
-    EMAIL_KEYS
-  )
-  const map = Object.fromEntries(rows.map((r) => [r.key, r.value]))
+const MASKED_PASSWORD = '••••••'
+
+export async function getEmailSettings() {
+  const rows = await prisma.setting.findMany({
+    where: { key: { in: EMAIL_KEYS } },
+  })
+  const map = Object.fromEntries(rows.map((row) => [row.key, row.value]))
   return {
     enabled: map.email_enabled === 'true',
     smtp_host: map.email_smtp_host || '',
@@ -23,34 +24,34 @@ export function getEmailSettings() {
     smtp_user: map.email_smtp_user || '',
     smtp_pass: map.email_smtp_pass || '',
     recipient: map.email_recipient || '',
-    smtp_pass_masked: map.email_smtp_pass ? '••••••' : '',
+    smtp_pass_masked: map.email_smtp_pass ? MASKED_PASSWORD : '',
   }
 }
 
-export function saveEmailSettings(settings) {
+export async function saveEmailSettings(settings) {
+  const existingPassword = await prisma.setting.findUnique({ where: { key: 'email_smtp_pass' } })
+  const smtpPass = settings.smtp_pass === MASKED_PASSWORD
+    ? existingPassword?.value || ''
+    : settings.smtp_pass || ''
+
   const pairs = [
     ['email_enabled', settings.enabled ? 'true' : 'false'],
     ['email_smtp_host', settings.smtp_host || ''],
     ['email_smtp_port', String(settings.smtp_port || '465')],
     ['email_smtp_user', settings.smtp_user || ''],
-    ['email_smtp_pass', settings.smtp_pass || ''],
+    ['email_smtp_pass', smtpPass],
     ['email_recipient', settings.recipient || ''],
   ]
-  // Don't overwrite password if masked value was sent back
-  if (settings.smtp_pass && settings.smtp_pass !== '••••••') {
-    // use as-is
-  } else if (settings.smtp_pass === '••••••') {
-    // keep existing password
-    const existing = queryAll('SELECT value FROM settings WHERE key = ?', ['email_smtp_pass'])
-    pairs[4][1] = existing[0]?.value || ''
-  }
 
-  for (const [key, value] of pairs) {
-    runSQL(
-      `INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
-      [key, value]
+  await prisma.$transaction(
+    pairs.map(([key, value]) =>
+      prisma.setting.upsert({
+        where: { key },
+        create: { key, value },
+        update: { value },
+      })
     )
-  }
+  )
 }
 
 function createTransporter(settings) {
@@ -67,15 +68,15 @@ function createTransporter(settings) {
 
 function buildDigestHtml(topics) {
   const rows = topics
-    .map((t) => {
-      const scoreColor = t.score >= 80 ? '#22c55e' : '#f59e0b'
+    .map((topic) => {
+      const scoreColor = topic.score >= 80 ? '#22c55e' : '#f59e0b'
       return `
         <tr>
           <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">
-            <a href="${t.url}" style="color:#3b82f6;text-decoration:none" target="_blank">${t.title}</a>
+            <a href="${topic.url}" style="color:#3b82f6;text-decoration:none" target="_blank">${topic.title}</a>
           </td>
-          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:#64748b">${t.source}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:${scoreColor};font-weight:600">${t.score}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:#64748b">${topic.source}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:${scoreColor};font-weight:600">${topic.score}</td>
         </tr>`
     })
     .join('')
@@ -106,14 +107,14 @@ export async function sendTestEmail(settings) {
     subject: 'HotTrack 邮件通知测试',
     html: `
       <div style="max-width:480px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;text-align:center;padding:40px 0">
-        <h2 style="color:#22c55e;margin-bottom:8px">✓ 配置成功</h2>
-        <p style="color:#64748b;font-size:14px">您的 HotTrack 邮件通知已就绪</p>
+        <h2 style="color:#22c55e;margin-bottom:8px">配置成功</h2>
+        <p style="color:#64748b;font-size:14px">你的 HotTrack 邮件通知已经就绪。</p>
       </div>`,
   })
 }
 
 export async function sendDigestEmail(topics) {
-  const settings = getEmailSettings()
+  const settings = await getEmailSettings()
   if (!settings.enabled || !settings.smtp_host || !settings.recipient) {
     console.log('[email] Email not enabled or config incomplete, skipping digest')
     return
@@ -127,7 +128,7 @@ export async function sendDigestEmail(topics) {
     await transporter.sendMail({
       from: settings.smtp_user,
       to: settings.recipient,
-      subject: `HotTrack 热点摘要 — ${now}`,
+      subject: `HotTrack 热点摘要 - ${now}`,
       html,
     })
     console.log(`[email] Digest sent with ${topics.length} topics to ${settings.recipient}`)

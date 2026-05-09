@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Radar, X } from 'lucide-react'
-import { api } from '../api'
+import { socket } from '../realtime/socket'
 
 export default function Toast() {
   const [toasts, setToasts] = useState([])
-  const [lastCheck, setLastCheck] = useState(null)
 
   const addToast = useCallback((notification) => {
     const id = Date.now() + Math.random()
@@ -15,32 +14,20 @@ export default function Toast() {
   }, [])
 
   useEffect(() => {
-    const checkNew = async () => {
-      try {
-        const notifications = await api.getNotifications(true)
-        const newOnes = lastCheck
-          ? notifications.filter((item) => new Date(item.created_at) > new Date(lastCheck))
-          : []
+    const handleNotification = (notification) => {
+      addToast(notification)
 
-        for (const notification of newOnes) {
-          addToast(notification)
-
-          if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('HotTrack 发现新热点', {
-              body: notification.title,
-              icon: '/vite.svg',
-            })
-          }
-        }
-
-        setLastCheck(new Date().toISOString())
-      } catch {}
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('HotTrack 发现新热点', {
+          body: notification.title,
+          icon: '/vite.svg',
+        })
+      }
     }
 
-    checkNew()
-    const interval = setInterval(checkNew, 30000)
-    return () => clearInterval(interval)
-  }, [lastCheck, addToast])
+    socket.on('notification:created', handleNotification)
+    return () => socket.off('notification:created', handleNotification)
+  }, [addToast])
 
   if (toasts.length === 0) return null
 

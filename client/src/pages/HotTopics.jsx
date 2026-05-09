@@ -3,6 +3,7 @@ import { Flame, Inbox, RefreshCw, SlidersHorizontal } from 'lucide-react'
 import { api } from '../api'
 import HotTopicCard from '../components/HotTopicCard'
 import { SOURCE_META } from '../config/sources'
+import { socket } from '../realtime/socket'
 
 function SkeletonTopicCard() {
   return (
@@ -51,6 +52,16 @@ export default function HotTopics() {
 
   useEffect(() => {
     loadTopics()
+  }, [filters])
+
+  useEffect(() => {
+    const refreshTopics = () => loadTopics()
+    socket.on('hot-topic:created', refreshTopics)
+    socket.on('fetch:completed', refreshTopics)
+    return () => {
+      socket.off('hot-topic:created', refreshTopics)
+      socket.off('fetch:completed', refreshTopics)
+    }
   }, [filters])
 
   const handleRefresh = async () => {

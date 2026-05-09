@@ -4,6 +4,7 @@ import { Activity, Flame, Radar, RefreshCw, Tags, TrendingUp, Zap } from 'lucide
 import { api } from '../api'
 import HotTopicCard from '../components/HotTopicCard'
 import { CHART_COLORS, SOURCE_META } from '../config/sources'
+import { socket } from '../realtime/socket'
 
 const SOURCE_NAMES = Object.fromEntries(
   Object.entries(SOURCE_META).map(([key, value]) => [key, value.label])
@@ -131,6 +132,18 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadData()
+  }, [])
+
+  useEffect(() => {
+    const refreshData = () => loadData()
+    socket.on('hot-topic:created', refreshData)
+    socket.on('notification:created', refreshData)
+    socket.on('fetch:completed', refreshData)
+    return () => {
+      socket.off('hot-topic:created', refreshData)
+      socket.off('notification:created', refreshData)
+      socket.off('fetch:completed', refreshData)
+    }
   }, [])
 
   const handleRefresh = async () => {

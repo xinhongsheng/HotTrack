@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { Flame, LayoutDashboard, PanelLeftClose, PanelLeftOpen, Radar, Settings, Tags } from 'lucide-react'
 import { api } from '../api'
+import { socket } from '../realtime/socket'
 
 const navItems = [
   { path: '/', label: '情报总览', icon: LayoutDashboard },
@@ -24,6 +25,12 @@ export default function Sidebar({ open, onToggle }) {
     fetchCount()
     const interval = setInterval(fetchCount, 30000)
     return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    const updateUnread = (payload) => setUnreadCount(payload.unread || 0)
+    socket.on('notification:count', updateUnread)
+    return () => socket.off('notification:count', updateUnread)
   }, [])
 
   return (

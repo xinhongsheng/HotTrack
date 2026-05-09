@@ -1,52 +1,62 @@
 import { Router } from 'express'
-import { queryAll, queryOne } from '../db.js'
+import { prisma } from '../db.ts'
+import { topicToApi } from '../serializers.ts'
 
 const router = Router()
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const { source, keyword_id, sort, limit } = req.query
-  let sql = 'SELECT ht.*, k.keyword FROM hot_topics ht LEFT JOIN keywords k ON ht.keyword_id = k.id WHERE 1=1'
-  const params = []
+  const where = {}
 
-  if (source) {
-    sql += ' AND ht.source = ?'
-    params.push(source)
-  }
-  if (keyword_id) {
-    sql += ' AND ht.keyword_id = ?'
-    params.push(keyword_id)
-  }
+  if (source) where.source = String(source)
+  if (keyword_id) where.keywordId = Number(keyword_id)
 
-  sql += sort === 'score' ? ' ORDER BY ht.ai_score DESC' : ' ORDER BY ht.fetched_at DESC'
-  sql += ' LIMIT ?'
-  params.push(parseInt(limit) || 50)
+  const topics = await prisma.hotTopic.findMany({
+    where,
+    include: { keyword: true },
+    orderBy: sort === 'score' ? { aiScore: 'desc' } : { fetchedAt: 'desc' },
+    take: Number(limit) || 50,
+  })
 
-  const topics = queryAll(sql, params)
-  res.json(topics)
+  res.json(topics.map(topicToApi))
 })
 
-router.get('/stats', (req, res) => {
-  const total = queryOne('SELECT COUNT(*) as count FROM hot_topics')
-  const today = queryOne("SELECT COUNT(*) as count FROM hot_topics WHERE fetched_at >= date('now')")
-  const bySource = queryAll('SELECT source, COUNT(*) as count FROM hot_topics GROUP BY source')
-  const avgScore = queryOne('SELECT AVG(ai_score) as avg FROM hot_topics WHERE ai_score > 0')
+router.get('/stats', async (req, res) => {
+  const startOfToday = new Date()
+  startOfToday.setHours(0, 0, 0, 0)
+
+  const [total, today, bySource, avgScore] = await Promise.all([
+    prisma.hotTopic.count(),
+    prisma.hotTopic.count({ where: { fetchedAt: { gte: startOfToday } } }),
+    prisma.hotTopic.groupBy({
+      by: ['source'],
+      _count: { source: true },
+    }),
+    prisma.hotTopic.aggregate({
+      _avg: { aiScore: true },
+      where: { aiScore: { gt: 0 } },
+    }),
+  ])
+
   res.json({
-    total: total?.count || 0,
-    today: today?.count || 0,
-    bySource,
-    avgScore: Math.round(avgScore?.avg || 0),
+    total,
+    today,
+    bySource: bySource.map((item) => ({ source: item.source, count: item._count.source })),
+    avgScore: Math.round(avgScore._avg.aiScore || 0),
   })
 })
 
-router.get('/:id', (req, res) => {
-  const topic = queryOne(
-    'SELECT ht.*, k.keyword FROM hot_topics ht LEFT JOIN keywords k ON ht.keyword_id = k.id WHERE ht.id = ?',
-    [req.params.id]
-  )
+router.get('/:id', async (req, res) => {
+  const topic = await prisma.hotTopic.findUnique({
+    where: { id: Number(req.params.id) },
+    include: { keyword: true },
+  })
+
   if (!topic) {
     return res.status(404).json({ error: '热点不存在' })
   }
-  res.json(topic)
+
+  res.json(topicToApi(topic))
 })
 
 export default router

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Bell, BellOff, CheckCircle2, ExternalLink, Info, Loader2, Mail, Radar, Settings as SettingsIcon } from 'lucide-react'
 import { api } from '../api'
 import { SOURCE_META } from '../config/sources'
+import { socket } from '../realtime/socket'
 
 function Field({ label, children }) {
   return (
@@ -50,6 +51,19 @@ export default function Settings() {
     loadEmailSettings()
     if ('Notification' in window) {
       setNotifPermission(Notification.permission)
+    }
+  }, [])
+
+  useEffect(() => {
+    const refreshNotifications = () => loadNotifications()
+    const updateCount = (payload) => setUnreadCount(payload.unread || 0)
+
+    socket.on('notification:created', refreshNotifications)
+    socket.on('notification:count', updateCount)
+
+    return () => {
+      socket.off('notification:created', refreshNotifications)
+      socket.off('notification:count', updateCount)
     }
   }, [])
 

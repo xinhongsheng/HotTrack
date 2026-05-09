@@ -3,16 +3,16 @@ import { getEmailSettings, saveEmailSettings, sendTestEmail } from '../services/
 
 const router = Router()
 
-router.get('/email-settings', (req, res) => {
+router.get('/email-settings', async (req, res) => {
   try {
-    const settings = getEmailSettings()
+    const settings = await getEmailSettings()
     res.json({ ...settings, smtp_pass: settings.smtp_pass_masked })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 })
 
-router.put('/email-settings', (req, res) => {
+router.put('/email-settings', async (req, res) => {
   try {
     const { smtp_host, smtp_port, smtp_user, smtp_pass, recipient, enabled } = req.body
 
@@ -23,7 +23,7 @@ router.put('/email-settings', (req, res) => {
       return res.status(400).json({ error: '端口号范围为 1-65535' })
     }
 
-    saveEmailSettings({ smtp_host, smtp_port, smtp_user, smtp_pass, recipient, enabled })
+    await saveEmailSettings({ smtp_host, smtp_port, smtp_user, smtp_pass, recipient, enabled })
     res.json({ success: true })
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -32,14 +32,14 @@ router.put('/email-settings', (req, res) => {
 
 router.post('/email-test', async (req, res) => {
   try {
-    const settings = getEmailSettings()
+    const settings = await getEmailSettings()
     if (!settings.smtp_host || !settings.smtp_user || !settings.smtp_pass || !settings.recipient) {
       return res.status(400).json({ error: '请先保存完整的 SMTP 配置' })
     }
     await sendTestEmail(settings)
     res.json({ success: true })
   } catch (err) {
-    res.status(400).json({ error: `发送失败: ${err.message}` })
+    res.status(400).json({ error: `发送失败：${err.message}` })
   }
 })
 

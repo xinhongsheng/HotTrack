@@ -1,33 +1,41 @@
 import { Router } from 'express'
-import { queryAll, queryOne, runSQL } from '../db.js'
+import { prisma } from '../db.ts'
+import { emitNotificationCount } from '../realtime.ts'
+import { notificationToApi } from '../serializers.ts'
 
 const router = Router()
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const { unread_only } = req.query
-  let sql = `SELECT n.*, ht.title, ht.url, ht.source, ht.ai_score
-    FROM notifications n
-    JOIN hot_topics ht ON n.hot_topic_id = ht.id`
-  if (unread_only === 'true') {
-    sql += ' WHERE n.is_read = 0'
-  }
-  sql += ' ORDER BY n.created_at DESC LIMIT 50'
-  const notifications = queryAll(sql)
-  res.json(notifications)
+  const notifications = await prisma.notification.findMany({
+    where: unread_only === 'true' ? { isRead: 0 } : undefined,
+    include: { hotTopic: true },
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+  })
+  res.json(notifications.map(notificationToApi))
 })
 
-router.get('/count', (req, res) => {
-  const result = queryOne('SELECT COUNT(*) as count FROM notifications WHERE is_read = 0')
-  res.json({ unread: result?.count || 0 })
+router.get('/count', async (req, res) => {
+  const unread = await prisma.notification.count({ where: { isRead: 0 } })
+  res.json({ unread })
 })
 
-router.put('/:id/read', (req, res) => {
-  runSQL('UPDATE notifications SET is_read = 1 WHERE id = ?', [req.params.id])
+router.put('/:id/read', async (req, res) => {
+  await prisma.notification.update({
+    where: { id: Number(req.params.id) },
+    data: { isRead: 1 },
+  })
+  await emitNotificationCount()
   res.json({ message: '已标记已读' })
 })
 
-router.put('/read-all', (req, res) => {
-  runSQL('UPDATE notifications SET is_read = 1 WHERE is_read = 0')
+router.put('/read-all', async (req, res) => {
+  await prisma.notification.updateMany({
+    where: { isRead: 0 },
+    data: { isRead: 1 },
+  })
+  await emitNotificationCount()
   res.json({ message: '全部已读' })
 })
 

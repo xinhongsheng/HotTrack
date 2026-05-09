@@ -1,0 +1,57 @@
+generator client {
+  provider   = "prisma-client"
+  output     = "../src/generated/prisma"
+  engineType = "client"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Keyword {
+  id        Int        @id @default(autoincrement())
+  keyword   String     @unique
+  category  String     @default("general")
+  isActive  Int        @default(1) @map("is_active")
+  createdAt DateTime   @default(now()) @map("created_at")
+  hotTopics HotTopic[]
+
+  @@map("keywords")
+}
+
+model HotTopic {
+  id            Int            @id @default(autoincrement())
+  title         String
+  url           String?
+  source        String
+  summary       String?
+  aiScore       Float          @default(0) @map("ai_score")
+  aiAnalysis    String?        @map("ai_analysis")
+  keywordId     Int?           @map("keyword_id")
+  isNotified    Int            @default(0) @map("is_notified")
+  fetchedAt     DateTime       @default(now()) @map("fetched_at")
+  keyword       Keyword?       @relation(fields: [keywordId], references: [id], onDelete: SetNull)
+  notifications Notification[]
+
+  @@index([source], map: "idx_hot_topics_source")
+  @@index([keywordId], map: "idx_hot_topics_keyword")
+  @@map("hot_topics")
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  hotTopicId Int      @map("hot_topic_id")
+  isRead     Int      @default(0) @map("is_read")
+  createdAt  DateTime @default(now()) @map("created_at")
+  hotTopic   HotTopic @relation(fields: [hotTopicId], references: [id], onDelete: Cascade)
+
+  @@index([isRead], map: "idx_notifications_read")
+  @@map("notifications")
+}
+
+model Setting {
+  key   String @id
+  value String
+
+  @@map("settings")
+}

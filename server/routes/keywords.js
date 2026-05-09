@@ -1,49 +1,65 @@
 import { Router } from 'express'
-import { queryAll, queryOne, runSQL } from '../db.js'
+import { prisma } from '../db.ts'
+import { keywordToApi } from '../serializers.ts'
 
 const router = Router()
 
-router.get('/', (req, res) => {
-  const keywords = queryAll('SELECT * FROM keywords ORDER BY created_at DESC')
-  res.json(keywords)
+router.get('/', async (req, res) => {
+  const keywords = await prisma.keyword.findMany({ orderBy: { createdAt: 'desc' } })
+  res.json(keywords.map(keywordToApi))
 })
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { keyword, category } = req.body
-  if (!keyword?.trim()) {
+  const normalized = keyword?.trim()
+
+  if (!normalized) {
     return res.status(400).json({ error: '关键词不能为空' })
   }
-  const existing = queryOne('SELECT id FROM keywords WHERE keyword = ?', [keyword.trim()])
+
+  const existing = await prisma.keyword.findUnique({ where: { keyword: normalized } })
   if (existing) {
     return res.status(409).json({ error: '关键词已存在' })
   }
-  runSQL('INSERT INTO keywords (keyword, category) VALUES (?, ?)', [keyword.trim(), category || 'general'])
-  const newKeyword = queryOne('SELECT * FROM keywords WHERE keyword = ?', [keyword.trim()])
-  res.status(201).json(newKeyword)
+
+  const created = await prisma.keyword.create({
+    data: {
+      keyword: normalized,
+      category: category || 'general',
+    },
+  })
+  res.status(201).json(keywordToApi(created))
 })
 
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
+  const id = Number(req.params.id)
   const { keyword, category, is_active } = req.body
-  const existing = queryOne('SELECT * FROM keywords WHERE id = ?', [req.params.id])
+  const existing = await prisma.keyword.findUnique({ where: { id } })
+
   if (!existing) {
     return res.status(404).json({ error: '关键词不存在' })
   }
-  runSQL('UPDATE keywords SET keyword = ?, category = ?, is_active = ? WHERE id = ?', [
-    keyword ?? existing.keyword,
-    category ?? existing.category,
-    is_active ?? existing.is_active,
-    req.params.id,
-  ])
-  const updated = queryOne('SELECT * FROM keywords WHERE id = ?', [req.params.id])
-  res.json(updated)
+
+  const updated = await prisma.keyword.update({
+    where: { id },
+    data: {
+      keyword: keyword ?? existing.keyword,
+      category: category ?? existing.category,
+      isActive: is_active === undefined ? existing.isActive : Number(Boolean(is_active)),
+    },
+  })
+  res.json(keywordToApi(updated))
 })
 
-router.delete('/:id', (req, res) => {
-  const existing = queryOne('SELECT * FROM keywords WHERE id = ?', [req.params.id])
+router.delete('/:id', async (req, res) => {
+  const id = Number(req.params.id)
+  const existing = await prisma.keyword.findUnique({ where: { id } })
+
   if (!existing) {
     return res.status(404).json({ error: '关键词不存在' })
   }
-  runSQL('DELETE FROM keywords WHERE id = ?', [req.params.id])
+
+  await prisma.keyword.delete({ where: { id } })
   res.json({ message: '已删除' })
 })
 

@@ -1,10 +1,10 @@
-import fetch from 'node-fetch'
+import { fetchWithRetry } from './utils.js'
 
 export async function fetchTrending(language = '', since = 'daily') {
   const url = `https://api.gitterapp.com/repositories?language=${language}&since=${since}`
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithRetry(url, {
       headers: {
         'User-Agent': 'HotTrack/1.0',
       },
@@ -30,7 +30,7 @@ export async function fetchTrending(language = '', since = 'daily') {
 async function fetchTrendingFallback(language = '') {
   try {
     const langParam = language ? `?spoken_language_code=&language=${language}` : ''
-    const res = await fetch(`https://github.com/trending${langParam}`, {
+    const res = await fetchWithRetry(`https://github.com/trending${langParam}`, {
       headers: {
         'User-Agent': 'HotTrack/1.0',
         Accept: 'text/html',

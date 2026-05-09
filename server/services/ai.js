@@ -2,7 +2,7 @@ import fetch from 'node-fetch'
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || ''
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
-const MODEL = 'google/gemini-2.0-flash-001'
+const MODEL = 'deepseek/deepseek-chat'
 
 export async function analyzeTopic(topic) {
   if (!OPENROUTER_API_KEY) {

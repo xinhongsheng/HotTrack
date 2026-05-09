@@ -11,4 +11,9 @@ node_modules
 .env
 *.md
 docs
+!docs/
+!docs/**/*.md
+server/src/generated/prisma
+.playwright-cli
+output/playwright
 
