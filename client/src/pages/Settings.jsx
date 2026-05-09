@@ -1,7 +1,33 @@
-import { useState, useEffect } from 'react'
-import { Settings as SettingsIcon, Bell, BellOff, CheckCircle2, Info, Radar, ExternalLink, Mail, Loader2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Bell, BellOff, CheckCircle2, ExternalLink, Info, Loader2, Mail, Radar, Settings as SettingsIcon } from 'lucide-react'
 import { api } from '../api'
 import { SOURCE_META } from '../config/sources'
+
+function Field({ label, children }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-bold" style={{ color: 'var(--text-muted)' }}>{label}</span>
+      {children}
+    </label>
+  )
+}
+
+function Toggle({ checked, onChange, label }) {
+  return (
+    <button
+      onClick={onChange}
+      className="relative h-6 w-11 rounded-full transition-colors"
+      style={{ background: checked ? 'var(--accent-green)' : 'rgba(112,128,150,0.28)' }}
+      aria-label={label}
+      type="button"
+    >
+      <span
+        className="absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform"
+        style={{ left: checked ? 23 : 4 }}
+      />
+    </button>
+  )
+}
 
 export default function Settings() {
   const [notifications, setNotifications] = useState([])
@@ -29,19 +55,19 @@ export default function Settings() {
 
   const loadNotifications = async () => {
     try {
-      const [notifs, count] = await Promise.all([
+      const [notificationData, countData] = await Promise.all([
         api.getNotifications(),
         api.getUnreadCount(),
       ])
-      setNotifications(notifs)
-      setUnreadCount(count.unread)
+      setNotifications(notificationData)
+      setUnreadCount(countData.unread || 0)
     } catch {}
   }
 
   const requestNotifPermission = async () => {
     if ('Notification' in window) {
-      const perm = await Notification.requestPermission()
-      setNotifPermission(perm)
+      const permission = await Notification.requestPermission()
+      setNotifPermission(permission)
     }
   }
 
@@ -91,7 +117,7 @@ export default function Settings() {
     setEmailMsg(null)
     try {
       await api.sendTestEmail()
-      setEmailMsg({ type: 'success', text: '测试邮件已发送，请检查收件箱' })
+      setEmailMsg({ type: 'success', text: '测试邮件已发送，请检查收件箱。' })
     } catch (err) {
       setEmailMsg({ type: 'error', text: err.message })
     } finally {
@@ -104,295 +130,211 @@ export default function Settings() {
     if (meta) {
       return { bg: meta.bg, color: meta.color, label: meta.shortLabel }
     }
-    return { bg: 'rgba(100,116,139,0.1)', color: '#64748b', label: source?.slice(0, 2) || '?' }
+    return { bg: 'rgba(112,128,150,0.14)', color: 'var(--text-muted)', label: source?.slice(0, 2) || '?' }
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
+    <div className="space-y-7">
       <div>
-        <div className="flex items-center gap-2.5 mb-1">
-          <SettingsIcon size={22} style={{ color: 'var(--accent-blue)' }} />
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>设置</h1>
+        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-bold text-emerald-200">
+          <SettingsIcon size={13} />
+          通知与系统
         </div>
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>系统配置与通知管理</p>
+        <h1 className="text-2xl font-bold md:text-3xl" style={{ color: 'var(--text-primary)' }}>设置</h1>
+        <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+          管理浏览器通知、邮件推送和热点发现记录，让重要信号及时抵达。
+        </p>
       </div>
 
-      {/* Notification Settings */}
-      <div className="glass rounded-xl p-5">
-        <h3 className="section-title mb-4">通知设置</h3>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {notifPermission === 'granted' ? (
-                <Bell size={18} style={{ color: 'var(--accent-green)' }} />
-              ) : (
-                <BellOff size={18} style={{ color: 'var(--text-muted)' }} />
-              )}
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <div className="panel rounded-xl p-5">
+          <h2 className="panel-title">浏览器通知</h2>
+          <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+            发现新的高分热点时，在桌面弹出提醒。
+          </p>
+
+          <div className="mt-5 flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.035] p-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-white/[0.04]">
+                {notifPermission === 'granted'
+                  ? <Bell size={19} style={{ color: 'var(--accent-green)' }} />
+                  : <BellOff size={19} style={{ color: 'var(--text-muted)' }} />}
+              </div>
               <div>
-                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>浏览器通知</p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>当发现新的高分热点时弹出桌面通知</p>
+                <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>桌面通知权限</p>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  当前状态：{notifPermission === 'granted' ? '已开启' : '未开启'}
+                </p>
               </div>
             </div>
+
             {notifPermission === 'granted' ? (
-              <span
-                className="badge text-xs px-3 py-1"
-                style={{ background: 'var(--accent-green-dim)', color: 'var(--accent-green)', border: '1px solid rgba(34,197,94,0.2)' }}
-              >
-                <CheckCircle2 size={12} className="mr-1" />
+              <span className="badge border border-emerald-300/20 bg-emerald-300/10 text-emerald-200">
+                <CheckCircle2 size={13} />
                 已开启
               </span>
             ) : (
-              <button
-                onClick={requestNotifPermission}
-                className="btn-primary px-4 py-1.5 text-xs"
-              >
+              <button onClick={requestNotifPermission} className="btn-primary px-4 py-2 text-xs" type="button">
                 开启通知
               </button>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Email Notification Settings */}
-      <div className="glass rounded-xl p-5">
-        <h3 className="section-title mb-4">邮件通知</h3>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {emailEnabled ? (
-                <Mail size={18} style={{ color: 'var(--accent-green)' }} />
-              ) : (
-                <Mail size={18} style={{ color: 'var(--text-muted)' }} />
-              )}
-              <div>
-                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>邮件通知</p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>每轮抓取后将高分热点摘要发送至指定邮箱</p>
-              </div>
+        <div className="panel rounded-xl p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="panel-title">邮件通知</h2>
+              <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+                每轮抓取后将高分热点摘要发送到指定邮箱。
+              </p>
             </div>
-            <button
-              onClick={() => setEmailEnabled(!emailEnabled)}
-              className="relative w-10 h-5 rounded-full cursor-pointer transition-colors"
-              style={{ background: emailEnabled ? 'var(--accent-green)' : 'rgba(100,116,139,0.3)' }}
-            >
-              <div
-                className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform"
-                style={{ left: emailEnabled ? '22px' : '2px' }}
-              />
-            </button>
+            <Toggle
+              checked={emailEnabled}
+              onChange={() => setEmailEnabled(!emailEnabled)}
+              label={emailEnabled ? '关闭邮件通知' : '开启邮件通知'}
+            />
           </div>
 
           {emailEnabled && (
-            <div className="space-y-3 pt-2 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>SMTP 服务器</label>
+            <div className="mt-5 space-y-4 border-t border-white/10 pt-5">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <Field label="SMTP 服务器">
                   <input
                     type="text"
                     value={emailConfig.smtp_host}
-                    onChange={(e) => setEmailConfig({ ...emailConfig, smtp_host: e.target.value })}
+                    onChange={(event) => setEmailConfig({ ...emailConfig, smtp_host: event.target.value })}
                     placeholder="smtp.qq.com"
-                    className="w-full mt-1 px-3 py-1.5 rounded-lg text-sm"
-                    style={{
-                      background: 'rgba(255,255,255,0.04)',
-                      color: 'var(--text-primary)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      outline: 'none',
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = 'var(--accent-blue)'}
-                    onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
+                    className="input-field w-full px-3 py-2 text-sm"
                   />
-                </div>
-                <div>
-                  <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>端口</label>
+                </Field>
+                <Field label="端口">
                   <input
                     type="number"
                     value={emailConfig.smtp_port}
-                    onChange={(e) => setEmailConfig({ ...emailConfig, smtp_port: e.target.value })}
+                    onChange={(event) => setEmailConfig({ ...emailConfig, smtp_port: event.target.value })}
                     placeholder="465"
-                    className="w-full mt-1 px-3 py-1.5 rounded-lg text-sm"
-                    style={{
-                      background: 'rgba(255,255,255,0.04)',
-                      color: 'var(--text-primary)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      outline: 'none',
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = 'var(--accent-blue)'}
-                    onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
+                    className="input-field w-full px-3 py-2 text-sm"
                   />
-                </div>
+                </Field>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>发送邮箱</label>
+
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <Field label="发送邮箱">
                   <input
                     type="email"
                     value={emailConfig.smtp_user}
-                    onChange={(e) => setEmailConfig({ ...emailConfig, smtp_user: e.target.value })}
+                    onChange={(event) => setEmailConfig({ ...emailConfig, smtp_user: event.target.value })}
                     placeholder="your@qq.com"
-                    className="w-full mt-1 px-3 py-1.5 rounded-lg text-sm"
-                    style={{
-                      background: 'rgba(255,255,255,0.04)',
-                      color: 'var(--text-primary)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      outline: 'none',
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = 'var(--accent-blue)'}
-                    onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
+                    className="input-field w-full px-3 py-2 text-sm"
                   />
-                </div>
-                <div>
-                  <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>SMTP 密码/授权码</label>
+                </Field>
+                <Field label="SMTP 密码 / 授权码">
                   <input
                     type="password"
                     value={emailConfig.smtp_pass}
-                    onChange={(e) => setEmailConfig({ ...emailConfig, smtp_pass: e.target.value })}
+                    onChange={(event) => setEmailConfig({ ...emailConfig, smtp_pass: event.target.value })}
                     placeholder="授权码"
-                    className="w-full mt-1 px-3 py-1.5 rounded-lg text-sm"
-                    style={{
-                      background: 'rgba(255,255,255,0.04)',
-                      color: 'var(--text-primary)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      outline: 'none',
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = 'var(--accent-blue)'}
-                    onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
+                    className="input-field w-full px-3 py-2 text-sm"
                   />
-                </div>
+                </Field>
               </div>
-              <div>
-                <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>接收邮箱</label>
+
+              <Field label="接收邮箱">
                 <input
                   type="email"
                   value={emailConfig.recipient}
-                  onChange={(e) => setEmailConfig({ ...emailConfig, recipient: e.target.value })}
+                  onChange={(event) => setEmailConfig({ ...emailConfig, recipient: event.target.value })}
                   placeholder="receive@example.com"
-                  className="w-full mt-1 px-3 py-1.5 rounded-lg text-sm"
-                  style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    color: 'var(--text-primary)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    outline: 'none',
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = 'var(--accent-blue)'}
-                  onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
+                  className="input-field w-full px-3 py-2 text-sm"
                 />
-              </div>
+              </Field>
 
               {emailMsg && (
                 <div
-                  className="text-xs px-3 py-2 rounded-lg"
+                  className="rounded-lg border px-3 py-2 text-xs"
                   style={{
-                    backgroundColor: emailMsg.type === 'success' ? 'rgba(34,197,94,0.08)' : 'rgba(249,115,22,0.08)',
-                    color: emailMsg.type === 'success' ? 'var(--accent-green)' : 'var(--accent-orange)',
+                    background: emailMsg.type === 'success' ? 'var(--accent-green-dim)' : 'var(--accent-red-dim)',
+                    borderColor: emailMsg.type === 'success' ? 'rgba(52,211,153,0.22)' : 'rgba(251,113,133,0.22)',
+                    color: emailMsg.type === 'success' ? 'var(--accent-green)' : 'var(--accent-red)',
                   }}
                 >
                   {emailMsg.text}
                 </div>
               )}
 
-              <div className="flex gap-2">
-                <button
-                  onClick={saveEmailSettings}
-                  disabled={emailSaving}
-                  className="btn-primary px-4 py-1.5 text-xs flex items-center gap-1"
-                >
-                  {emailSaving && <Loader2 size={12} className="animate-spin" />}
+              <div className="flex flex-wrap gap-2">
+                <button onClick={saveEmailSettings} disabled={emailSaving} className="btn-primary px-4 py-2 text-xs" type="button">
+                  {emailSaving && <Loader2 size={13} className="animate-spin" />}
                   保存配置
                 </button>
-                <button
-                  onClick={handleTestEmail}
-                  disabled={emailTesting}
-                  className="px-4 py-1.5 text-xs rounded-lg cursor-pointer transition-colors flex items-center gap-1"
-                  style={{
-                    background: 'rgba(255,255,255,0.06)',
-                    color: 'var(--text-secondary)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                  }}
-                >
-                  {emailTesting && <Loader2 size={12} className="animate-spin" />}
+                <button onClick={handleTestEmail} disabled={emailTesting} className="btn-secondary px-4 py-2 text-xs" type="button">
+                  {emailTesting && <Loader2 size={13} className="animate-spin" />}
                   发送测试邮件
                 </button>
               </div>
             </div>
           )}
         </div>
-      </div>
+      </section>
 
-      {/* Notifications List */}
-      <div className="glass rounded-xl p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="section-title flex items-center gap-2" style={{ margin: 0 }}>
-            通知记录
-            {unreadCount > 0 && (
-              <span
-                className="badge"
-                style={{ background: 'var(--accent-orange-dim)', color: 'var(--accent-orange)' }}
-              >
-                {unreadCount}
-              </span>
-            )}
-          </h3>
+      <section className="panel rounded-xl p-5">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="panel-title">通知记录</h2>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              {unreadCount > 0 ? `${unreadCount} 条未读信号` : '暂无未读信号'}
+            </p>
+          </div>
           {unreadCount > 0 && (
-            <button
-              onClick={handleMarkAllRead}
-              className="text-xs cursor-pointer transition-colors"
-              style={{ color: 'var(--accent-blue)' }}
-              onMouseEnter={(e) => e.target.style.color = '#60a5fa'}
-              onMouseLeave={(e) => e.target.style.color = 'var(--accent-blue)'}
-            >
-              全部已读
+            <button onClick={handleMarkAllRead} className="btn-secondary min-h-9 px-3 text-xs" type="button">
+              全部标为已读
             </button>
           )}
         </div>
 
         {notifications.length > 0 ? (
-          <div className="space-y-2 max-h-[400px] overflow-y-auto">
-            {notifications.map((n) => {
-              const srcStyle = getSourceStyle(n.source)
+          <div className="max-h-[430px] space-y-2 overflow-y-auto pr-1">
+            {notifications.map((notification) => {
+              const srcStyle = getSourceStyle(notification.source)
               return (
                 <div
-                  key={n.id}
-                  className="p-3 rounded-lg transition-all"
+                  key={notification.id}
+                  className="rounded-xl border p-3 transition-colors"
                   style={{
-                    background: n.is_read ? 'rgba(255,255,255,0.02)' : 'var(--accent-blue-dim)',
-                    border: n.is_read ? '1px solid transparent' : '1px solid rgba(59,130,246,0.1)',
+                    background: notification.is_read ? 'rgba(255,255,255,0.025)' : 'var(--accent-blue-dim)',
+                    borderColor: notification.is_read ? 'rgba(255,255,255,0.06)' : 'rgba(56,189,248,0.22)',
                   }}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span
-                          className="badge"
-                          style={{ background: srcStyle.bg, color: srcStyle.color }}
-                        >
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <span className="badge" style={{ background: srcStyle.bg, color: srcStyle.color }}>
                           {srcStyle.label}
                         </span>
-                        {!n.is_read && (
-                          <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--accent-blue)' }} />
+                        {!notification.is_read && (
+                          <span className="h-2 w-2 rounded-full bg-sky-300 shadow-[0_0_12px_rgba(56,189,248,0.8)]" />
                         )}
                       </div>
                       <a
-                        href={n.url}
+                        href={notification.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm hover:text-blue-400 transition-colors line-clamp-1 flex items-center gap-1"
+                        className="line-clamp-1 text-sm font-bold transition-colors hover:text-sky-200"
                         style={{ color: 'var(--text-primary)' }}
                       >
-                        {n.title}
-                        <ExternalLink size={10} className="flex-shrink-0 opacity-40" />
+                        {notification.title}
+                        <ExternalLink size={12} className="ml-1 inline opacity-50" />
                       </a>
-                      <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                        {new Date(n.created_at).toLocaleString('zh-CN')}
+                      <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+                        {new Date(notification.created_at).toLocaleString('zh-CN')}
                       </p>
                     </div>
-                    {!n.is_read && (
+                    {!notification.is_read && (
                       <button
-                        onClick={() => handleMarkRead(n.id)}
-                        className="text-xs flex-shrink-0 cursor-pointer transition-colors"
-                        style={{ color: 'var(--text-muted)' }}
-                        onMouseEnter={(e) => e.target.style.color = 'var(--accent-blue)'}
-                        onMouseLeave={(e) => e.target.style.color = 'var(--text-muted)'}
+                        onClick={() => handleMarkRead(notification.id)}
+                        className="btn-secondary min-h-8 px-3 text-xs"
+                        type="button"
                       >
                         已读
                       </button>
@@ -403,29 +345,38 @@ export default function Settings() {
             })}
           </div>
         ) : (
-          <div className="py-8 text-center">
-            <Bell size={24} style={{ color: 'var(--text-muted)', opacity: 0.3 }} className="mx-auto mb-2" />
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>暂无通知</p>
+          <div className="empty-state py-10">
+            <Bell size={28} style={{ color: 'var(--text-muted)' }} />
+            <p className="mt-3 text-sm" style={{ color: 'var(--text-muted)' }}>暂无通知</p>
           </div>
         )}
-      </div>
+      </section>
 
-      {/* About */}
-      <div className="glass rounded-xl p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <Info size={14} style={{ color: 'var(--text-muted)' }} />
-          <h3 className="section-title" style={{ margin: 0 }}>关于</h3>
+      <section className="panel rounded-xl p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <Info size={16} style={{ color: 'var(--text-muted)' }} />
+          <h2 className="panel-title">关于 HotTrack</h2>
         </div>
-        <div className="space-y-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-          <div className="flex items-center gap-2">
-            <Radar size={14} style={{ color: 'var(--accent-blue)' }} />
-            <span>HotTrack v1.0.0 - 行业热点雷达</span>
+        <div className="grid grid-cols-1 gap-3 text-xs md:grid-cols-2 xl:grid-cols-4" style={{ color: 'var(--text-muted)' }}>
+          <div className="rounded-lg bg-white/[0.035] p-3">
+            <Radar size={15} className="mb-2" style={{ color: 'var(--accent-green)' }} />
+            <p className="font-bold" style={{ color: 'var(--text-secondary)' }}>HotTrack v1.0.0</p>
+            <p>行业热点雷达</p>
           </div>
-          <p>数据来源: Hacker News, GitHub, Twitter/X, Bing, Google, DuckDuckGo, 搜狗, B站, 微博</p>
-          <p>AI 分析: OpenRouter API</p>
-          <p>抓取频率: 每 30 分钟自动抓取</p>
+          <div className="rounded-lg bg-white/[0.035] p-3">
+            <p className="font-bold" style={{ color: 'var(--text-secondary)' }}>数据来源</p>
+            <p className="mt-1">HN、GitHub、Twitter/X、搜索引擎、B站、微博</p>
+          </div>
+          <div className="rounded-lg bg-white/[0.035] p-3">
+            <p className="font-bold" style={{ color: 'var(--text-secondary)' }}>AI 分析</p>
+            <p className="mt-1">OpenRouter API</p>
+          </div>
+          <div className="rounded-lg bg-white/[0.035] p-3">
+            <p className="font-bold" style={{ color: 'var(--text-secondary)' }}>抓取频率</p>
+            <p className="mt-1">每 30 分钟自动抓取</p>
+          </div>
         </div>
-      </div>
+      </section>
     </div>
   )
 }

@@ -1,13 +1,13 @@
 import { NavLink } from 'react-router-dom'
-import { useState, useEffect } from 'react'
-import { LayoutDashboard, Tags, Flame, Settings, PanelLeftClose, PanelLeftOpen, Radar } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Flame, LayoutDashboard, PanelLeftClose, PanelLeftOpen, Radar, Settings, Tags } from 'lucide-react'
 import { api } from '../api'
 
 const navItems = [
-  { path: '/', label: '仪表盘', icon: LayoutDashboard },
+  { path: '/', label: '情报总览', icon: LayoutDashboard },
   { path: '/keywords', label: '关键词', icon: Tags },
-  { path: '/topics', label: '热点', icon: Flame },
-  { path: '/settings', label: '设置', icon: Settings },
+  { path: '/topics', label: '热点库', icon: Flame },
+  { path: '/settings', label: '通知设置', icon: Settings },
 ]
 
 export default function Sidebar({ open, onToggle }) {
@@ -17,9 +17,10 @@ export default function Sidebar({ open, onToggle }) {
     const fetchCount = async () => {
       try {
         const data = await api.getUnreadCount()
-        setUnreadCount(data.unread)
+        setUnreadCount(data.unread || 0)
       } catch {}
     }
+
     fetchCount()
     const interval = setInterval(fetchCount, 30000)
     return () => clearInterval(interval)
@@ -28,35 +29,37 @@ export default function Sidebar({ open, onToggle }) {
   return (
     <aside
       aria-label="主导航"
-      className={`fixed left-0 top-0 h-full z-50 transition-all duration-300 glass ${
+      className={`glass fixed left-0 top-0 z-50 h-full transition-[width] duration-300 ${
         open ? 'w-64' : 'w-16'
       }`}
     >
-      {/* Header */}
-      <div className="flex items-center h-16 px-4 border-b border-white/5">
+      <div className="flex h-16 items-center gap-3 border-b border-white/5 px-3">
         <button
           onClick={onToggle}
           aria-label={open ? '收起侧边栏' : '展开侧边栏'}
-          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
-          style={{ color: 'var(--text-secondary)' }}
+          className="icon-btn"
+          type="button"
         >
           {open ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
         </button>
+
         {open && (
-          <div className="ml-3 flex items-center gap-2.5">
-            <div className="relative">
-              <Radar size={20} style={{ color: 'var(--accent-blue)' }} />
-              <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full animate-glow" style={{ background: 'var(--accent-blue)' }} />
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="relative grid h-9 w-9 place-items-center rounded-lg border border-emerald-300/20 bg-emerald-300/10">
+              <Radar size={20} style={{ color: 'var(--accent-green)' }} />
+              <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.9)]" />
             </div>
-            <span className="font-bold text-lg tracking-wide" style={{ color: 'var(--accent-blue)', fontFamily: 'var(--font-mono)' }}>
-              HotTrack
-            </span>
+            <div className="min-w-0">
+              <p className="metric-value truncate text-base font-bold">HotTrack</p>
+              <p className="truncate text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                Live Intelligence
+              </p>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Navigation */}
-      <nav className="mt-6 px-2" role="navigation">
+      <nav className="mt-5 px-2" role="navigation">
         {navItems.map((item) => {
           const Icon = item.icon
           return (
@@ -65,49 +68,54 @@ export default function Sidebar({ open, onToggle }) {
               to={item.path}
               end={item.path === '/'}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 transition-all duration-200 group relative cursor-pointer ${
-                  isActive
-                    ? 'text-blue-400'
-                    : 'hover:bg-white/5'
+                `group relative mb-1 flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-bold transition-colors ${
+                  isActive ? 'text-emerald-200' : 'hover:bg-white/[0.055]'
                 }`
               }
-              style={({ isActive }) => isActive ? { background: 'var(--accent-blue-dim)' } : { color: 'var(--text-secondary)' }}
+              style={({ isActive }) => ({
+                background: isActive ? 'linear-gradient(90deg, rgba(52,211,153,0.18), rgba(56,189,248,0.08))' : 'transparent',
+                border: isActive ? '1px solid rgba(52,211,153,0.2)' : '1px solid transparent',
+                color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+              })}
             >
-              <Icon size={18} className="flex-shrink-0" />
-              {open && <span className="text-sm font-medium">{item.label}</span>}
+              <Icon size={18} className="shrink-0" />
+              {open && <span className="truncate">{item.label}</span>}
+              {item.path === '/topics' && unreadCount > 0 && open && (
+                <span className="ml-auto rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-bold text-amber-300">
+                  {unreadCount}
+                </span>
+              )}
               {!open && (
-                <div
+                <span
                   role="tooltip"
-                  className="absolute left-full ml-2 px-2 py-1 text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none"
-                  style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)', boxShadow: 'var(--shadow-md)' }}
+                  className="pointer-events-none absolute left-full ml-2 whitespace-nowrap rounded-md px-2 py-1 text-xs opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
+                  style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
                 >
                   {item.label}
-                </div>
+                </span>
               )}
             </NavLink>
           )
         })}
       </nav>
 
-      {/* Status */}
       {open && (
         <div className="absolute bottom-4 left-0 right-0 px-4">
-          <div className="p-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)' }}>
-            <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-              <div className="w-1.5 h-1.5 rounded-full animate-breathe" style={{ background: 'var(--accent-green)' }} />
-              <span>监控运行中</span>
+          <div className="rounded-xl border border-emerald-300/15 bg-emerald-300/[0.06] p-3">
+            <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+              <span className="h-2 w-2 rounded-full bg-emerald-300 animate-breathe" />
+              <span>监控任务运行中</span>
             </div>
-            {unreadCount > 0 && (
-              <div className="mt-2 flex items-center gap-2 text-xs">
-                <span
-                  className="badge"
-                  style={{ background: 'var(--accent-orange-dim)', color: 'var(--accent-orange)' }}
-                >
-                  {unreadCount}
-                </span>
-                <span style={{ color: 'var(--accent-orange)' }}>条新通知</span>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+              <div className="rounded-md bg-black/20 px-2 py-1.5">
+                <p style={{ color: 'var(--text-muted)' }}>状态</p>
+                <p className="font-bold text-emerald-200">ONLINE</p>
               </div>
-            )}
+              <div className="rounded-md bg-black/20 px-2 py-1.5">
+                <p style={{ color: 'var(--text-muted)' }}>未读</p>
+                <p className="font-bold text-amber-200">{unreadCount}</p>
+              </div>
+            </div>
           </div>
         </div>
       )}

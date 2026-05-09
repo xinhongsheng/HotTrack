@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Tags, Plus, Trash2, Search, Lightbulb } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Lightbulb, Plus, Search, Tags, Trash2 } from 'lucide-react'
 import { api } from '../api'
 
 const categories = [
@@ -14,12 +14,14 @@ const suggestedKeywords = ['AI', 'LLM', 'GPT', 'Claude', 'React', 'Rust', 'WebAs
 
 function SkeletonKeyword() {
   return (
-    <div className="glass rounded-xl p-4 flex items-center justify-between">
-      <div className="flex items-center gap-4">
-        <div className="skeleton w-10 h-5 rounded-full" />
-        <div className="skeleton h-4 w-24" />
+    <div className="panel rounded-xl p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="skeleton h-6 w-11 rounded-full" />
+          <div className="skeleton h-4 w-28" />
+        </div>
+        <div className="skeleton h-8 w-8" />
       </div>
-      <div className="skeleton h-3 w-8" />
     </div>
   )
 }
@@ -42,13 +44,15 @@ export default function Keywords() {
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+  }, [])
 
-  const handleAdd = async (e) => {
-    e.preventDefault()
+  const handleAdd = async (event) => {
+    event.preventDefault()
     setError('')
     try {
-      await api.createKeyword({ keyword: newKeyword, category: newCategory })
+      await api.createKeyword({ keyword: newKeyword.trim(), category: newCategory })
       setNewKeyword('')
       load()
     } catch (err) {
@@ -56,75 +60,88 @@ export default function Keywords() {
     }
   }
 
-  const handleToggle = async (kw) => {
-    await api.updateKeyword(kw.id, { is_active: kw.is_active ? 0 : 1 })
+  const handleToggle = async (keyword) => {
+    await api.updateKeyword(keyword.id, { is_active: keyword.is_active ? 0 : 1 })
     load()
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('确定删除该关键词？')) return
+    if (!confirm('确定删除这个关键词吗？')) return
     await api.deleteKeyword(id)
     load()
   }
 
-  const handleQuickAdd = async (kw) => {
+  const handleQuickAdd = async (keyword) => {
     try {
-      await api.createKeyword({ keyword: kw })
+      await api.createKeyword({ keyword })
       load()
     } catch {}
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
+    <div className="space-y-7">
       <div>
-        <div className="flex items-center gap-2.5 mb-1">
-          <Tags size={22} style={{ color: 'var(--accent-blue)' }} />
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>关键词管理</h1>
+        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-sky-300/20 bg-sky-300/10 px-3 py-1 text-xs font-bold text-sky-200">
+          <Tags size={13} />
+          监控词库
         </div>
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>配置需要监控的关键词</p>
+        <h1 className="text-2xl font-bold md:text-3xl" style={{ color: 'var(--text-primary)' }}>关键词管理</h1>
+        <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+          配置需要持续扫描的主题、产品名或技术词，系统会按任务周期自动发现相关热点。
+        </p>
       </div>
 
-      {/* Add Form */}
-      <form onSubmit={handleAdd} className="glass rounded-xl p-5">
-        <label className="section-title block mb-3">添加新关键词</label>
-        <div className="flex gap-3 flex-wrap">
+      <form onSubmit={handleAdd} className="panel rounded-xl p-5">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="panel-title">新增监控关键词</h2>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>建议使用短词或明确实体名，便于提高命中质量。</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_180px_auto]">
           <input
             type="text"
             value={newKeyword}
-            onChange={(e) => setNewKeyword(e.target.value)}
-            placeholder="输入关键词，如: AI、LLM、React..."
-            className="flex-1 min-w-[200px] px-4 py-2.5 input-field"
+            onChange={(event) => setNewKeyword(event.target.value)}
+            placeholder="输入关键词，例如 AI、LLM、React..."
+            className="input-field px-4 py-2.5"
             required
             aria-label="关键词输入"
           />
           <select
             value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            className="px-4 py-2.5 select-field"
+            onChange={(event) => setNewCategory(event.target.value)}
+            className="select-field px-4 py-2.5"
             aria-label="选择分类"
           >
-            {categories.map((c) => (
-              <option key={c.value} value={c.value}>{c.label}</option>
+            {categories.map((category) => (
+              <option key={category.value} value={category.value}>{category.label}</option>
             ))}
           </select>
-          <button
-            type="submit"
-            className="btn-primary px-6 py-2.5 text-sm flex items-center gap-2"
-          >
-            <Plus size={14} />
+          <button type="submit" className="btn-primary px-5 py-2.5 text-sm">
+            <Plus size={15} />
             添加
           </button>
         </div>
+
         {error && (
-          <p className="text-xs mt-2 flex items-center gap-1" style={{ color: 'var(--accent-red)' }} role="alert">
+          <p className="mt-3 rounded-lg border border-rose-300/20 bg-rose-300/10 px-3 py-2 text-xs text-rose-200" role="alert">
             {error}
           </p>
         )}
       </form>
 
-      {/* Keywords List */}
-      <div className="space-y-2">
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="panel-title">监控列表</h2>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              {loading ? '加载中' : `${keywords.length} 个关键词`}
+            </p>
+          </div>
+        </div>
+
         {loading ? (
           <>
             <SkeletonKeyword />
@@ -132,90 +149,80 @@ export default function Keywords() {
             <SkeletonKeyword />
           </>
         ) : keywords.length === 0 ? (
-          <div className="glass rounded-xl empty-state" style={{ minHeight: '160px' }}>
-            <Search size={32} style={{ color: 'var(--text-muted)', opacity: 0.3 }} />
-            <p className="mt-3 text-sm" style={{ color: 'var(--text-muted)' }}>还没有关键词</p>
-            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>添加关键词开始监控热点</p>
+          <div className="panel rounded-xl empty-state" style={{ minHeight: 190 }}>
+            <Search size={34} style={{ color: 'var(--text-muted)' }} />
+            <p className="mt-3 text-sm font-bold" style={{ color: 'var(--text-secondary)' }}>还没有关键词</p>
+            <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>添加关键词后即可开始追踪热点。</p>
           </div>
         ) : (
-          keywords.map((kw) => (
-            <div
-              key={kw.id}
-              className="glass rounded-xl p-4 flex items-center justify-between group card-interactive"
-            >
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => handleToggle(kw)}
-                  aria-label={`${kw.is_active ? '停用' : '启用'}关键词 ${kw.keyword}`}
-                  className={`w-10 h-5 rounded-full transition-all duration-300 relative cursor-pointer ${
-                    kw.is_active ? '' : ''
-                  }`}
-                  style={{ background: kw.is_active ? 'var(--accent-blue)' : 'var(--bg-elevated)' }}
-                >
-                  <div
-                    className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-300"
-                    style={{ left: kw.is_active ? '21px' : '2px' }}
-                  />
-                </button>
-                <div className="flex items-center gap-2">
-                  <span
-                    className="font-medium text-sm"
-                    style={{ color: kw.is_active ? 'var(--text-primary)' : 'var(--text-muted)' }}
+          keywords.map((keyword) => (
+            <div key={keyword.id} className="panel card-interactive rounded-xl p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-4">
+                  <button
+                    onClick={() => handleToggle(keyword)}
+                    aria-label={`${keyword.is_active ? '停用' : '启用'}关键词 ${keyword.keyword}`}
+                    className="relative h-6 w-11 shrink-0 rounded-full transition-colors"
+                    style={{ background: keyword.is_active ? 'var(--accent-green)' : 'rgba(112,128,150,0.28)' }}
+                    type="button"
                   >
-                    {kw.keyword}
-                  </span>
-                  <span
-                    className="badge"
-                    style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)' }}
-                  >
-                    {categories.find((c) => c.value === kw.category)?.label || kw.category}
-                  </span>
+                    <span
+                      className="absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform"
+                      style={{ left: keyword.is_active ? 23 : 4 }}
+                    />
+                  </button>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className="truncate text-sm font-bold"
+                        style={{ color: keyword.is_active ? 'var(--text-primary)' : 'var(--text-muted)' }}
+                      >
+                        {keyword.keyword}
+                      </span>
+                      <span className="badge bg-white/[0.045]" style={{ color: 'var(--text-muted)' }}>
+                        {categories.find((category) => category.value === keyword.category)?.label || keyword.category}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+                      {keyword.is_active ? '正在监控' : '已暂停'}
+                    </p>
+                  </div>
                 </div>
+
+                <button
+                  onClick={() => handleDelete(keyword.id)}
+                  className="btn-danger h-9 min-h-9 px-3 text-xs"
+                  aria-label={`删除关键词 ${keyword.keyword}`}
+                  type="button"
+                >
+                  <Trash2 size={14} />
+                  删除
+                </button>
               </div>
-              <button
-                onClick={() => handleDelete(kw.id)}
-                className="p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-white/5 cursor-pointer"
-                style={{ color: 'var(--text-muted)' }}
-                aria-label={`删除关键词 ${kw.keyword}`}
-              >
-                <Trash2 size={14} />
-              </button>
             </div>
           ))
         )}
-      </div>
+      </section>
 
-      {/* Quick Add Suggestions */}
-      <div className="glass rounded-xl p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <Lightbulb size={14} style={{ color: 'var(--accent-orange)' }} />
-          <h3 className="section-title" style={{ margin: 0 }}>热门关键词推荐</h3>
+      <section className="panel rounded-xl p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <Lightbulb size={16} style={{ color: 'var(--accent-orange)' }} />
+          <h2 className="panel-title">热门关键词推荐</h2>
         </div>
         <div className="flex flex-wrap gap-2">
-          {suggestedKeywords.map((kw) => (
+          {suggestedKeywords.map((keyword) => (
             <button
-              key={kw}
-              onClick={() => handleQuickAdd(kw)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer"
-              style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid var(--border-subtle)',
-                color: 'var(--text-secondary)',
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.borderColor = 'rgba(59,130,246,0.3)'
-                e.target.style.color = 'var(--accent-blue)'
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.borderColor = 'var(--border-subtle)'
-                e.target.style.color = 'var(--text-secondary)'
-              }}
+              key={keyword}
+              onClick={() => handleQuickAdd(keyword)}
+              className="btn-secondary min-h-9 px-3 text-xs"
+              type="button"
             >
-              + {kw}
+              <Plus size={13} />
+              {keyword}
             </button>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   )
 }

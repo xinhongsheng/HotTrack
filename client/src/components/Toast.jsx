@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
-import { X, Radar } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { Radar, X } from 'lucide-react'
 import { api } from '../api'
 
 export default function Toast() {
@@ -7,10 +7,10 @@ export default function Toast() {
   const [lastCheck, setLastCheck] = useState(null)
 
   const addToast = useCallback((notification) => {
-    const id = Date.now()
+    const id = Date.now() + Math.random()
     setToasts((prev) => [...prev, { id, ...notification }])
     setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id))
+      setToasts((prev) => prev.filter((toast) => toast.id !== id))
     }, 5000)
   }, [])
 
@@ -19,15 +19,15 @@ export default function Toast() {
       try {
         const notifications = await api.getNotifications(true)
         const newOnes = lastCheck
-          ? notifications.filter((n) => new Date(n.created_at) > new Date(lastCheck))
+          ? notifications.filter((item) => new Date(item.created_at) > new Date(lastCheck))
           : []
 
-        for (const n of newOnes) {
-          addToast(n)
+        for (const notification of newOnes) {
+          addToast(notification)
 
-          if (Notification.permission === 'granted') {
-            new Notification('HotTrack 新热点', {
-              body: n.title,
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('HotTrack 发现新热点', {
+              body: notification.title,
               icon: '/vite.svg',
             })
           }
@@ -46,7 +46,7 @@ export default function Toast() {
 
   return (
     <div
-      className="fixed top-4 right-4 z-[100] flex flex-col gap-2 max-w-sm"
+      className="fixed right-4 top-4 z-[100] flex w-[calc(100vw-32px)] max-w-sm flex-col gap-2"
       role="status"
       aria-live="polite"
     >
@@ -54,29 +54,31 @@ export default function Toast() {
         <div
           key={toast.id}
           className="animate-slide-in glass-elevated rounded-xl p-4"
-          style={{ borderColor: 'rgba(59,130,246,0.2)' }}
+          style={{ borderColor: 'rgba(52,211,153,0.24)' }}
         >
           <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 mt-0.5">
-              <Radar size={14} style={{ color: 'var(--accent-blue)' }} className="animate-breathe" />
+            <div className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-emerald-300/10 text-emerald-200">
+              <Radar size={15} className="animate-breathe" />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium mb-1" style={{ color: 'var(--accent-blue)' }}>新热点发现</p>
+            <div className="min-w-0 flex-1">
+              <p className="mb-1 text-xs font-bold" style={{ color: 'var(--accent-green)' }}>
+                新热点信号
+              </p>
               <a
                 href={toast.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm hover:text-blue-400 transition-colors line-clamp-2"
+                className="line-clamp-2 text-sm transition-colors hover:text-emerald-200"
                 style={{ color: 'var(--text-primary)' }}
               >
                 {toast.title}
               </a>
             </div>
             <button
-              onClick={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
-              className="flex-shrink-0 p-1 rounded-md hover:bg-white/10 transition-colors cursor-pointer"
-              style={{ color: 'var(--text-muted)' }}
+              onClick={() => setToasts((prev) => prev.filter((item) => item.id !== toast.id))}
+              className="icon-btn h-8 min-h-8 min-w-8"
               aria-label="关闭通知"
+              type="button"
             >
               <X size={14} />
             </button>
