@@ -44,6 +44,12 @@ export async function analyzeTopic(topic) {
       }),
     })
 
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      console.warn(`[ai] API returned ${res.status}: ${text.slice(0, 200)}`)
+      return { score: estimateScore(topic), analysis: 'AI 服务暂时不可用', isRelevant: true }
+    }
+
     const data = await res.json()
     const content = data.choices?.[0]?.message?.content || ''
 
